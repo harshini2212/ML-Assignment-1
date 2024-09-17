@@ -1,0 +1,66 @@
+load problem1.mat;
+Lx=length(x);
+Ly=length(y);
+ran=randperm(Lx);
+x=x(ran);
+y=y(ran);
+x=normalize(x);
+y=normalize(y);
+num_full=100;
+err_full=zeros(num_full);
+for m=1:num_full
+[err,model] = polyreg(x,y,m);
+err_full(m)=err;
+end
+clf
+plot(err_full(1:num_full),'r');
+xlabel('Polynomial rder');
+ylabel('Error-fulldata');
+title("Plot for polynomial order vs mean squared error ");
+xtr=x(1:fix(Lx/2));
+xts=x(fix(Lx/2)+1:end);
+ytr=y(1:fix(Lx/2));
+yts=y(fix(Lx/2)+1:end);
+len= 50;
+xu=1:len;
+testerr=zeros(len);
+trainerr=zeros(len);
+for m=1:len
+[err,model,errT] = polyreg(xtr,ytr,m,xts,yts);
+testerr(m)=errT;
+trainerr(m)=err;
+end
+figure()
+clf
+plot(trainerr(1:len),'r');
+hold on
+plot(testerr(1:len),'b');
+title("Plot for all polynomial orders");
+legend('Train error','Test error');
+xlabel('polynomial order');
+ylabel('Error');
+figure()
+clf
+plot(trainerr(5:15),'r');
+xticklabels({5:15})
+hold on
+plot(testerr(5:15),'b');
+xticklabels({5:15})
+title("Plot to find best polynomial order");
+legend('Train error','Test error');
+xlabel('polynomial order');
+ylabel('Error');
+answer=6;
+[err,model,errT] = polyreg(xtr,ytr,answer,xts,yts);
+qq = zeros(length(x),answer);
+for i=1:answer
+qq(:,i) = x.^(answer-i);
+end
+q = 1:500 ;
+figure()
+clf
+scatter(x,qq*model)
+hold on
+scatter(x,y)
+legend("predicted data","true data")
+title("Plot between predicted and original data");

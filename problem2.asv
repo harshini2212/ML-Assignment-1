@@ -1,0 +1,49 @@
+load('problem2.mat');
+function y_pred = predict(X, theta)
+    y_pred = X * theta;
+end
+function cost = regularized_risk(X, y, theta, lambda)
+    N = length(y);
+    predictions = predict(X, theta);
+    errors = predictions - y;
+    cost = (1 / (2 * N)) * sum(errors.^2) + (lambda / (2 * N)) * sum(theta(2:end).^2);
+end
+function [theta, cost_history] = gradient_descent(X, y, theta, lambda, alpha, num_iters)
+    N = length(y);
+    cost_history = zeros(num_iters, 1);
+
+    for iter = 1:num_iters
+        predictions = predict(X, theta);
+        errors = predictions - y;
+        grad = (1 / N) * (X' * errors) + (lambda / N) * [0; theta(2:end)];
+        theta = theta - alpha * grad;
+        cost_history(iter) = regularized_risk(X, y, theta, lambda);
+    end
+end
+function [best_lambda, train_risks, test_risks] = cross_validation(X, y, lambda_values, alpha, num_iters)
+    N = size(X, 1);
+    fold_size = floor(N / 2);
+    
+    X_train1 = X(1:fold_size, :);
+    y_train1 = y(1:fold_size);
+    X_train2 = X(fold_size+1:end, :);
+    y_train2 = y(fold_size+1:end);
+
+    train_risks = zeros(length(lambda_values), 1);
+    test_risks = zeros(length(lambda_values), 1);
+
+    for i = 1:length(lambda_values)
+        lambda = lambda_values(i);
+        theta = zeros(size(X, 2), 1);
+        [theta, ~] = gradient_descent(X_train1, y_train1, theta, lambda, alpha, num_iters);
+        train_risks(i) = regularized_risk(X_train1, y_train1, theta, lambda);
+        test_risks(i) = regularized_risk(X_train2, y_train2, theta, lambda);
+        theta = zeros(size(X, 2), 1);
+        [theta, ~] = gradient_descent(X_train2, y_train2, theta, lambda, alpha, num_iters);
+        train_risks(i) = train_risks(i) + regularized_risk(X_train2, y_train2, theta, lambda);
+        test_risks(i) = test_risks(i) + regularized_risk(X_train1, y_train1, theta, lambda);
+    end
+
+    [~, best_idx] = min(test_risks);
+    best_lambda = lambda_values(best_idx);
+end
